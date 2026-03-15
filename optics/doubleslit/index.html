@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이중슬릿 시뮬레이션</title>
+  <style>
+    :root {
+      --bg: #eef7ff;
+      --panel: #ffffff;
+      --text: #183247;
+      --accent: #2d8cff;
+      --shadow: rgba(18, 64, 94, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      background: linear-gradient(180deg, #eef8ff 0%, #f7fcff 100%);
+      color: var(--text);
+    }
+    .wrap {
+      width: min(1240px, calc(100vw - 24px));
+      margin: 16px auto;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 16px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid #dcebf4;
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 10px 30px var(--shadow);
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    h2 { margin: 18px 0 10px; font-size: 16px; }
+    p, label, .value { line-height: 1.5; font-size: 14px; }
+    .control-group { margin-bottom: 16px; }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    input[type="checkbox"] { transform: translateY(1px); accent-color: var(--accent); }
+    .value {
+      min-width: 84px;
+      text-align: right;
+      font-weight: 600;
+      color: #245071;
+    }
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .toggle-label { font-size: 13px; color: #35576f; }
+    .toggle {
+      position: relative;
+      width: 64px;
+      height: 30px;
+      display: inline-block;
+      cursor: pointer;
+    }
+    .toggle input { display: none; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: #2d8cff;
+      transition: background 0.25s ease;
+    }
+    .toggle-slider::before {
+      content: "";
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      left: 3px;
+      top: 3px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      transition: transform 0.25s ease;
+    }
+    .toggle input:checked + .toggle-slider { background: #ffd34d; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(34px); }
+    .legend { display: grid; gap: 8px; margin-top: 10px; }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .swatch {
+      width: 26px;
+      height: 6px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+    canvas {
+      width: 100%;
+      display: block;
+      background: #08141d;
+      border: 1px solid #183243;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(18, 64, 94, 0.12);
+      touch-action: none;
+    }
+    .hint {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #eff7fd;
+      color: #35576f;
+      font-size: 13px;
+    }
+    @media (max-width: 960px) { .wrap { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="panel">
+      <h1>이중슬릿 물결파 시뮬레이션</h1>
+      <p>
+        슬릿 왼쪽의 평면파가 두 틈을 지나며 원형파로 퍼집니다. 슬릿 간격은 슬릿을 직접 드래그해서
+        중앙을 기준으로 대칭 조절할 수 있습니다.
+      </p>
+
+      <div class="control-group">
+        <h2>매질 설정</h2>
+        <div class="row">
+          <label for="lambda">진공 기준 파장</label>
+          <div id="lambdaValue" class="value">44 px</div>
+        </div>
+        <input id="lambda" type="range" min="20" max="100" step="1" value="44" />
+
+        <div class="row" style="margin-top: 10px;">
+          <label for="refractiveIndex">굴절률 n</label>
+          <div id="refractiveValue" class="value">1.00</div>
+        </div>
+        <input id="refractiveIndex" type="range" min="1.00" max="2.20" step="0.01" value="1.00" />
+
+        <div class="row" style="margin-top: 10px;">
+          <label for="speed">위상 진행</label>
+          <div id="speedValue" class="value">0.50</div>
+        </div>
+        <input id="speed" type="range" min="0" max="1" step="0.01" value="0.5" />
+      </div>
+
+      <div class="control-group">
+        <h2>필드 표시 모드</h2>
+        <div class="toggle-wrap">
+          <span class="toggle-label">합성파</span>
+          <label class="toggle">
+            <input id="modeToggle" type="checkbox" checked />
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label">각각의 파동</span>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <h2>보조선 표시</h2>
+        <div class="row"><label><input id="showHalfGrid" type="checkbox" checked /> 반파장선 (λ/2)</label></div>
+        <div class="row"><label><input id="showFullGrid" type="checkbox" checked /> 파장선 (λ)</label></div>
+      </div>
+
+      <div class="row">
+        <span>슬릿 간격</span>
+        <div id="gapValue" class="value">126 px</div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><span class="swatch" style="background: #2d8cff;"></span> 합성파 공간</div>
+        <div class="legend-item"><span class="swatch" style="background: #ffd34d;"></span> 각각의 파동 공간</div>
+        <div class="legend-item"><span class="swatch" style="background: #4e9fe9;"></span> 파장선: 실선</div>
+        <div class="legend-item"><span class="swatch" style="background: #77b7ff;"></span> 반파장선: 점선</div>
+      </div>
+
+      <div class="hint">
+        슬릿 위나 아래 손잡이 부분을 드래그하면 슬릿 간격이 중앙 기준으로 함께 바뀝니다.
+      </div>
+    </section>
+
+    <section>
+      <canvas id="simCanvas" width="960" height="560"></canvas>
+    </section>
+  </div>
+
+  <script>
+    const simCanvas = document.getElementById('simCanvas');
+    const ctx = simCanvas.getContext('2d', { alpha: false });
+
+    const lambdaInput = document.getElementById('lambda');
+    const refractiveInput = document.getElementById('refractiveIndex');
+    const speedInput = document.getElementById('speed');
+    const showHalfGridInput = document.getElementById('showHalfGrid');
+    const showFullGridInput = document.getElementById('showFullGrid');
+    const modeToggle = document.getElementById('modeToggle');
+
+    const lambdaValue = document.getElementById('lambdaValue');
+    const refractiveValue = document.getElementById('refractiveValue');
+    const speedValue = document.getElementById('speedValue');
+    const gapValue = document.getElementById('gapValue');
+
+    const W = simCanvas.width;
+    const H = simCanvas.height;
+    const centerY = H / 2;
+    const TAU = Math.PI * 2;
+
+    const slitWallX = 250;
+    const screenX = 760;
+    const screenResultX = 848;
+    const resultWidth = 52;
+    const slitHalfHeight = 18;
+    const activeRegion = { left: slitWallX + 14, right: screenX - 10, top: 36, bottom: H - 36 };
+    const planeWaveRegion = { left: 36, right: slitWallX - 18, top: activeRegion.top, bottom: activeRegion.bottom };
+
+    let slitGap = 126;
+    let slit1 = { x: slitWallX, y: centerY - slitGap / 2 };
+    let slit2 = { x: slitWallX, y: centerY + slitGap / 2 };
+
+    let lambda0 = Number(lambdaInput.value);
+    let refractiveIndex = Number(refractiveInput.value);
+    let phaseSpeed = Number(speedInput.value);
+    let t = 0;
+    let fieldMode = 'separate';
+    let selectedY = centerY;
+    let draggingGap = false;
+    let lastFrame = 0;
+    let fieldStep = 10;
+
+    let graphDirty = true;
+    let graphCanvas = document.createElement('canvas');
+    graphCanvas.width = resultWidth;
+    graphCanvas.height = H;
+    let graphCtx = graphCanvas.getContext('2d', { alpha: false });
+
+    function effectiveLambda() { return lambda0 / refractiveIndex; }
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+    function colorWithAlpha(hex, alpha) {
+      const n = hex.replace('#', '');
+      const bigint = parseInt(n, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function syncSlits() {
+      slit1.y = centerY - slitGap / 2;
+      slit2.y = centerY + slitGap / 2;
+      graphDirty = true;
+      const lam = effectiveLambda();
+      fieldStep = lam < 28 ? 12 : lam < 40 ? 11 : 10;
+    }
+
+    function updateLabels() {
+      lambdaValue.textContent = `${lambda0.toFixed(0)} px`;
+      refractiveValue.textContent = refractiveIndex.toFixed(2);
+      speedValue.textContent = phaseSpeed.toFixed(2);
+      gapValue.textContent = `${slitGap.toFixed(0)} px`;
+    }
+
+    function intensityAtY(y) {
+      const lam = effectiveLambda();
+      const p = { x: screenX, y };
+      const r1 = dist(p, slit1);
+      const r2 = dist(p, slit2);
+      const delta = r1 - r2;
+      const phase = TAU * delta / lam;
+      const base = Math.cos(phase / 2);
+      const envelope = Math.exp(-Math.pow((y - centerY) / (H * 0.28), 2));
+      return clamp(0.02 + 0.98 * base * base * envelope, 0, 1);
+    }
+
+    function rebuildGraph() {
+      graphCtx.fillStyle = '#08141d';
+      graphCtx.fillRect(0, 0, resultWidth, H);
+      const top = activeRegion.top;
+      const bottom = activeRegion.bottom;
+      for (let y = top; y <= bottom; y += 2) {
+        const I = intensityAtY(y);
+        const fringe = Math.pow(I, 0.76);
+        const brightness = clamp(0.05 + 1.2 * fringe, 0.05, 1.3);
+        const r = Math.floor(16 + 225 * brightness);
+        const g = Math.floor(28 + 215 * brightness);
+        const b = Math.floor(50 + 190 * brightness);
+        graphCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        graphCtx.fillRect(0, y - 1, resultWidth, 2);
+      }
+      graphCtx.strokeStyle = '#244255';
+      graphCtx.lineWidth = 1;
+      graphCtx.strokeRect(0, top, resultWidth, bottom - top);
+      graphDirty = false;
+    }
+
+    function drawBackground() {
+      ctx.fillStyle = '#08141d';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#0c1c28';
+      ctx.fillRect(planeWaveRegion.left, planeWaveRegion.top, planeWaveRegion.right - planeWaveRegion.left, planeWaveRegion.bottom - planeWaveRegion.top);
+      ctx.fillRect(activeRegion.left, activeRegion.top, activeRegion.right - activeRegion.left, activeRegion.bottom - activeRegion.top);
+      ctx.fillStyle = '#0b1822';
+      ctx.fillRect(screenResultX - 12, activeRegion.top, resultWidth + 24, activeRegion.bottom - activeRegion.top);
+    }
+
+    function drawPlaneWaveGuides(left, right, top, bottom, lam) {
+      const step = lam / 2;
+      const start = left - (left % step);
+      for (let x = start; x <= right; x += step) {
+        const idx = Math.round((x - start) / step);
+        const isFull = idx % 2 === 0;
+        if (isFull && showFullGridInput.checked) {
+          ctx.beginPath();
+          ctx.setLineDash([]);
+          ctx.moveTo(x, top); ctx.lineTo(x, bottom);
+          ctx.strokeStyle = colorWithAlpha('#4e9fe9', 0.22);
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        if (!isFull && showHalfGridInput.checked) {
+          ctx.beginPath();
+          ctx.setLineDash([4, 6]);
+          ctx.moveTo(x, top); ctx.lineTo(x, bottom);
+          ctx.strokeStyle = colorWithAlpha('#77b7ff', 0.28);
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+    }
+
+    function drawPlaneWaveRegion() {
+      const lam = effectiveLambda();
+      const omega = phaseSpeed * 0.08 * TAU;
+      const { left, right, top, bottom } = planeWaveRegion;
+      for (let x = left; x <= right; x += 9) {
+        const amp = Math.sin((TAU / lam) * x - omega * t);
+        const alpha = 0.04 + 0.10 * Math.abs(amp);
+        const stripeW = 3 + 2 * Math.abs(amp);
+        ctx.fillStyle = amp >= 0 ? colorWithAlpha('#2d8cff', alpha) : colorWithAlpha('#7fc8ff', alpha);
+        ctx.fillRect(x - stripeW / 2, top, stripeW, bottom - top);
+      }
+      if (showHalfGridInput.checked || showFullGridInput.checked) {
+        drawPlaneWaveGuides(left, right, top, bottom, lam);
+      }
+    }
+
+    function drawBarrier() {
+      ctx.fillStyle = '#1c3242';
+      ctx.fillRect(slitWallX - 8, 0, 16, slit1.y - slitHalfHeight);
+      ctx.fillRect(slitWallX - 8, slit1.y + slitHalfHeight, 16, slit2.y - slit1.y - slitHalfHeight * 2);
+      ctx.fillRect(slitWallX - 8, slit2.y + slitHalfHeight, 16, H - slit2.y - slitHalfHeight);
+
+      ctx.fillStyle = '#bfe3ff';
+      ctx.beginPath();
+      ctx.roundRect(slitWallX - 5, slit1.y - slitHalfHeight, 10, slitHalfHeight * 2, 5);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.roundRect(slitWallX - 5, slit2.y - slitHalfHeight, 10, slitHalfHeight * 2, 5);
+      ctx.fill();
+
+      const handleColor = '#88c7ff';
+      ctx.fillStyle = handleColor;
+      ctx.beginPath();
+      ctx.arc(slitWallX, slit1.y, 8, 0, TAU);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(slitWallX, slit2.y, 8, 0, TAU);
+      ctx.fill();
+    }
+
+    function pointToSegmentDistance(px, py, ax, ay, bx, by) {
+      const dx = bx - ax;
+      const dy = by - ay;
+      if (dx === 0 && dy === 0) return Math.hypot(px - ax, py - ay);
+      const tproj = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy);
+      const t = clamp(tproj, 0, 1);
+      const cx = ax + t * dx;
+      const cy = ay + t * dy;
+      return Math.hypot(px - cx, py - cy);
+    }
+
+    function drawCompositeWaveField() {
+      const lam = effectiveLambda();
+      const omega = phaseSpeed * 0.08 * TAU;
+      const invLam = TAU / lam;
+      for (let y = activeRegion.top; y <= activeRegion.bottom; y += fieldStep) {
+        for (let x = activeRegion.left; x <= activeRegion.right; x += fieldStep) {
+          const r1 = Math.hypot(x - slit1.x, y - slit1.y);
+          const r2 = Math.hypot(x - slit2.x, y - slit2.y);
+          const amp = 0.5 * (Math.sin(invLam * r1 - omega * t) + Math.sin(invLam * r2 - omega * t));
+          const intensity = Math.abs(amp);
+          const alpha = 0.015 + 0.18 * intensity;
+          ctx.fillStyle = amp >= 0 ? colorWithAlpha('#2d8cff', alpha) : colorWithAlpha('#7fc8ff', alpha);
+          ctx.fillRect(x, y, fieldStep - 2, fieldStep - 2);
+        }
+      }
+    }
+
+    function drawSeparateWaveField() {
+      const lam = effectiveLambda();
+      const omega = phaseSpeed * 0.08 * TAU;
+      const step = 7;
+      const target = { x: screenX, y: selectedY };
+
+      for (let y = activeRegion.top; y <= activeRegion.bottom; y += step) {
+        for (let x = activeRegion.left; x <= activeRegion.right; x += step) {
+          const r1 = Math.hypot(x - slit1.x, y - slit1.y);
+          const r2 = Math.hypot(x - slit2.x, y - slit2.y);
+          const a1 = Math.sin((TAU / lam) * r1 - omega * t);
+          const a2 = Math.sin((TAU / lam) * r2 - omega * t);
+          const dLine1 = pointToSegmentDistance(x, y, slit1.x, slit1.y, target.x, target.y);
+          const dLine2 = pointToSegmentDistance(x, y, slit2.x, slit2.y, target.x, target.y);
+          const beam1 = Math.exp(-Math.pow(dLine1 / 11, 2));
+          const beam2 = Math.exp(-Math.pow(dLine2 / 11, 2));
+
+          const intensity1 = Math.abs(a1);
+          const phaseColor1 = a1 >= 0 ? '#ffc400' : '#fff3a6';
+          const alpha1 = clamp((0.02 + 0.16 * intensity1) * (0.18 + 2.2 * beam1), 0.01, 0.55);
+          const rdraw1 = 0.9 + 1.35 * intensity1 + 0.9 * beam1;
+          ctx.beginPath();
+          ctx.arc(x - 1.2, y, rdraw1, 0, TAU);
+          ctx.fillStyle = colorWithAlpha(phaseColor1, alpha1);
+          ctx.fill();
+
+          const intensity2 = Math.abs(a2);
+          const phaseColor2 = a2 >= 0 ? '#ffcf33' : '#fff6bf';
+          const alpha2 = clamp((0.02 + 0.16 * intensity2) * (0.18 + 2.2 * beam2), 0.01, 0.55);
+          const rdraw2 = 0.9 + 1.35 * intensity2 + 0.9 * beam2;
+          ctx.beginPath();
+          ctx.arc(x + 1.2, y, rdraw2, 0, TAU);
+          ctx.fillStyle = colorWithAlpha(phaseColor2, alpha2);
+          ctx.fill();
+        }
+      }
+    }
+
+    function drawCircularWavefronts(source) {
+      const lam = effectiveLambda();
+      const maxR = Math.hypot(W, H);
+      const phaseTravel = phaseSpeed * t * 2.2;
+      const pulse = ((phaseTravel % lam) + lam) % lam;
+      const target = { x: screenX, y: selectedY };
+      const dTarget = Math.hypot(target.x - source.x, target.y - source.y);
+      const highlightWidth = Math.max(2.2, lam * 0.11);
+      const fullColor = fieldMode === 'separate' ? '#ffd34d' : '#4ca2ff';
+      const halfColor = fieldMode === 'separate' ? '#ffe88a' : '#83c2ff';
+
+      if (showFullGridInput.checked) {
+        for (let r = pulse; r < maxR; r += lam) {
+          let alpha = fieldMode === 'separate' ? 0.20 : 0.20;
+          let width = 1;
+          if (fieldMode === 'separate') {
+            const nearTarget = Math.exp(-Math.pow((r - dTarget) / highlightWidth, 2));
+            alpha = clamp(0.10 + 0.66 * nearTarget, 0.08, 0.88);
+            width = 1.0 + 1.9 * nearTarget;
+          }
+          ctx.beginPath();
+          ctx.arc(source.x, source.y, r, -1.15, 1.15);
+          ctx.strokeStyle = colorWithAlpha(fullColor, alpha);
+          ctx.lineWidth = width;
+          ctx.setLineDash([]);
+          ctx.stroke();
+        }
+      }
+      if (showHalfGridInput.checked) {
+        for (let r = pulse + lam / 2; r < maxR; r += lam) {
+          let alpha = fieldMode === 'separate' ? 0.24 : 0.24;
+          let width = 1;
+          if (fieldMode === 'separate') {
+            const nearTarget = Math.exp(-Math.pow((r - dTarget) / highlightWidth, 2));
+            alpha = clamp(0.07 + 0.52 * nearTarget, 0.05, 0.72);
+            width = 0.9 + 1.5 * nearTarget;
+          }
+          ctx.beginPath();
+          ctx.arc(source.x, source.y, r, -1.15, 1.15);
+          ctx.strokeStyle = colorWithAlpha(halfColor, alpha);
+          ctx.lineWidth = width;
+          ctx.setLineDash([5, 6]);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      }
+    }
+
+    function drawScreenAndResult() {
+      const top = activeRegion.top;
+      const bottom = activeRegion.bottom;
+      ctx.strokeStyle = '#e2edf6';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(screenX, top - 6);
+      ctx.lineTo(screenX, bottom + 6);
+      ctx.stroke();
+      if (graphDirty) rebuildGraph();
+      ctx.drawImage(graphCanvas, screenResultX, 0);
+      ctx.fillStyle = '#b9d1e2';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('스크린', screenX - 18, 24);
+      ctx.fillText('밝기 결과', screenResultX - 20, 24);
+    }
+
+
+    function drawSelectedWaveProbe() {
+      if (fieldMode !== 'separate') return;
+      const target = { x: screenX, y: clamp(selectedY, activeRegion.top, activeRegion.bottom) };
+
+      ctx.save();
+      const grad = ctx.createRadialGradient(target.x, target.y, 2, target.x, target.y, 24);
+      grad.addColorStop(0, 'rgba(255,255,255,0.98)');
+      grad.addColorStop(0.32, 'rgba(255,225,120,0.70)');
+      grad.addColorStop(1, 'rgba(255,225,120,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, 24, 0, TAU);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, 6.5, 0, TAU);
+      ctx.fillStyle = '#fff4c2';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawSourceMarkers() {
+      [slit1, slit2].forEach((s) => {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 4, 0, TAU);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#2d8cff';
+        ctx.stroke();
+      });
+    }
+
+    function drawLabels() {
+      ctx.fillStyle = '#8bb0c7';
+      ctx.font = '13px sans-serif';
+      ctx.fillText('평면파 입사', 72, 24);
+      ctx.fillText('이중슬릿', slitWallX - 20, H - 18);
+    }
+
+    function draw() {
+      drawBackground();
+      drawPlaneWaveRegion();
+      if (fieldMode === 'separate') drawSeparateWaveField();
+      else drawCompositeWaveField();
+      drawCircularWavefronts(slit1);
+      drawCircularWavefronts(slit2);
+      drawBarrier();
+      drawScreenAndResult();
+      drawSelectedWaveProbe();
+      drawSourceMarkers();
+      drawLabels();
+    }
+
+    function animate(ts) {
+      if (!lastFrame) lastFrame = ts;
+      const dt = ts - lastFrame;
+      if (dt >= 33) {
+        lastFrame = ts;
+        t += 1;
+        draw();
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function getCanvasPoint(e) {
+      const rect = simCanvas.getBoundingClientRect();
+      const scaleX = simCanvas.width / rect.width;
+      const scaleY = simCanvas.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY,
+      };
+    }
+
+    function hitHandle(p) {
+      return Math.hypot(p.x - slitWallX, p.y - slit1.y) < 18 || Math.hypot(p.x - slitWallX, p.y - slit2.y) < 18;
+    }
+
+    function dragGapFromPoint(p) {
+      const halfGap = clamp(Math.abs(p.y - centerY), 28, 170);
+      slitGap = halfGap * 2;
+      syncSlits();
+      updateLabels();
+    }
+
+    simCanvas.addEventListener('pointerdown', (e) => {
+      const p = getCanvasPoint(e);
+      if (hitHandle(p)) {
+        draggingGap = true;
+        simCanvas.setPointerCapture(e.pointerId);
+        dragGapFromPoint(p);
+        return;
+      }
+      if (fieldMode === 'separate' && p.x >= screenX - 24 && p.x <= screenX + 24) {
+        selectedY = clamp(p.y, activeRegion.top, activeRegion.bottom);
+      }
+    });
+
+    simCanvas.addEventListener('pointermove', (e) => {
+      const p = getCanvasPoint(e);
+      if (draggingGap) {
+        dragGapFromPoint(p);
+        return;
+      }
+      if (fieldMode === 'separate' && (e.buttons === 1) && p.x >= screenX - 24 && p.x <= screenX + 24) {
+        selectedY = clamp(p.y, activeRegion.top, activeRegion.bottom);
+      }
+    });
+
+    function stopDrag(e) {
+      if (draggingGap) {
+        draggingGap = false;
+        if (e && simCanvas.hasPointerCapture?.(e.pointerId)) simCanvas.releasePointerCapture(e.pointerId);
+      }
+    }
+    simCanvas.addEventListener('pointerup', stopDrag);
+    simCanvas.addEventListener('pointercancel', stopDrag);
+
+    lambdaInput.addEventListener('input', () => {
+      lambda0 = Number(lambdaInput.value);
+      graphDirty = true;
+      syncSlits();
+      updateLabels();
+    });
+    refractiveInput.addEventListener('input', () => {
+      refractiveIndex = Number(refractiveInput.value);
+      graphDirty = true;
+      syncSlits();
+      updateLabels();
+    });
+    speedInput.addEventListener('input', () => {
+      phaseSpeed = Number(speedInput.value);
+      updateLabels();
+    });
+    showHalfGridInput.addEventListener('input', draw);
+    showFullGridInput.addEventListener('input', draw);
+    modeToggle.addEventListener('input', () => {
+      fieldMode = modeToggle.checked ? 'separate' : 'composite';
+      draw();
+    });
+
+    syncSlits();
+    updateLabels();
+    draw();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
