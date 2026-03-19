@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>열전도 비교 시뮬레이션</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --line: #2b3140;
+      --text: #e8edf5;
+      --muted: #a9b2c3;
+      --accent: #7aa2ff;
+      --btn: #202633;
+      --btn-hover: #2a3242;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background: radial-gradient(circle at top, #171c26 0%, var(--bg) 55%);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .sub {
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .panel {
+      background: rgba(23, 26, 33, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+      padding: 18px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(8px);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .control {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    label {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #202633;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #dbe6ff 50%),
+        linear-gradient(135deg, #dbe6ff 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) calc(50% - 3px),
+        calc(100% - 12px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      padding-right: 34px;
+    }
+
+    select:focus {
+      border-color: #83a2ff;
+      box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.18);
+    }
+
+    .value {
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--btn);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      transition: 0.18s ease;
+    }
+
+    button:hover { background: var(--btn-hover); }
+    button.active {
+      background: linear-gradient(135deg, #3759b9, #6b8dff);
+      border-color: #83a2ff;
+      color: white;
+    }
+
+    .canvas-panel {
+      padding: 10px;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 18px;
+      background: #0a0d12;
+      border: 1px solid #242b38;
+    }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .grad {
+      flex: 1;
+      min-width: 260px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: linear-gradient(90deg,
+        rgb(148, 0, 211) 0%,
+        rgb(0, 0, 255) 20%,
+        rgb(0, 255, 0) 42%,
+        rgb(255, 255, 0) 68%,
+        rgb(255, 0, 0) 88%,
+        rgb(255, 255, 255) 100%);
+    }
+
+    .legend-text {
+      font-size: 14px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.08);
+      font-size: 14px;
+    }
+
+    .metric:last-child { border-bottom: none; }
+
+    @media (max-width: 1080px) {
+      .controls { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 900px) {
+      .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .controls { grid-template-columns: 1fr; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>열전도 비교 시뮬레이션</h1>
+      <div class="sub">
+        같은 크기의 두 판을 동시에 가열했을 때, 재료에 따라 열이 퍼지는 속도가 어떻게 달라지는지 비교합니다.<br>
+        <b>우리 눈 모드</b>에서는 재질과 가열 장면을, <b>열화상카메라 모드</b>에서는 온도 분포를 색으로 확인할 수 있습니다.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="controls">
+        <div class="control">
+          <label for="materialA">왼쪽 판 재료</label>
+          <select id="materialA">
+            <option value="wood">나무</option>
+            <option value="iron">철</option>
+            <option value="stainless">스테인리스</option>
+            <option value="aluminum">알루미늄</option>
+            <option value="copper">구리</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label for="materialB">오른쪽 판 재료</label>
+          <select id="materialB">
+            <option value="iron" selected>철</option>
+            <option value="wood">나무</option>
+            <option value="stainless">스테인리스</option>
+            <option value="aluminum">알루미늄</option>
+            <option value="copper">구리</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label for="heatTemp">가열 온도</label>
+          <input id="heatTemp" type="range" min="50" max="300" value="220" />
+          <div class="value"><span id="heatTempValue">220</span> °C</div>
+        </div>
+
+        <div class="control">
+          <label for="ambientTemp">초기 온도</label>
+          <input id="ambientTemp" type="range" min="0" max="50" value="20" />
+          <div class="value"><span id="ambientTempValue">20</span> °C</div>
+        </div>
+
+        <div class="control">
+          <label for="simSpeed">시간 배속</label>
+          <input id="simSpeed" type="range" min="0.3" max="10" step="0.1" value="1.0" />
+          <div class="value"><span id="simSpeedValue">1.0</span> ×</div>
+        </div>
+
+        <div class="control">
+          <label for="lossRate">냉각 정도</label>
+          <input id="lossRate" type="range" min="0" max="0.08" step="0.005" value="0.02" />
+          <div class="value"><span id="lossRateValue">0.020</span></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="visionBtn" class="active">우리 눈 모드</button>
+        <button id="thermalBtn">열화상카메라 모드</button>
+        <button id="toggleHeatBtn" class="active">가열 중</button>
+        <button id="pauseBtn">일시정지</button>
+        <button id="resetBtn">초기화</button>
+      </div>
+    </div>
+
+    <div class="panel canvas-panel">
+      <canvas id="simCanvas" width="1120" height="620"></canvas>
+      <div class="legend">
+        <div class="grad"></div>
+        <div class="legend-text">
+          <span>낮은 온도: 보라색</span>
+          <span>높은 온도: 보라 → 파랑 → 초록 → 노랑 → 빨강 → 흰색</span>
+        </div>
+      </div>
+
+      <div class="info-grid">
+        <div class="card">
+          <h3 id="cardTitleA">나무판</h3>
+          <div class="metric"><span>열전도 확산 계수(모형값)</span><b id="alphaA">0.10</b></div>
+          <div class="metric"><span>왼쪽 끝 온도</span><b id="leftA">-</b></div>
+          <div class="metric"><span>가운데 온도</span><b id="midA">-</b></div>
+          <div class="metric"><span>오른쪽 끝 온도</span><b id="rightA">-</b></div>
+        </div>
+        <div class="card">
+          <h3 id="cardTitleB">철판</h3>
+          <div class="metric"><span>열전도 확산 계수(모형값)</span><b id="alphaB">1.35</b></div>
+          <div class="metric"><span>왼쪽 끝 온도</span><b id="leftB">-</b></div>
+          <div class="metric"><span>가운데 온도</span><b id="midB">-</b></div>
+          <div class="metric"><span>오른쪽 끝 온도</span><b id="rightB">-</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const N = 140;
+    const dx = 1;
+    const baseDt = 0.08;
+
+    const materials = {
+      wood: {
+        name: '나무',
+        alpha: 0.10,
+        labelColor: 'rgba(226,195,145,0.92)',
+        style: 'wood'
+      },
+      iron: {
+        name: '철',
+        alpha: 1.35,
+        labelColor: 'rgba(210,225,238,0.92)',
+        style: 'iron'
+      },
+      stainless: {
+        name: '스테인리스',
+        alpha: 0.40,
+        labelColor: 'rgba(205,215,225,0.92)',
+        style: 'stainless'
+      },
+      aluminum: {
+        name: '알루미늄',
+        alpha: 2.20,
+        labelColor: 'rgba(220,228,236,0.92)',
+        style: 'aluminum'
+      },
+      copper: {
+        name: '구리',
+        alpha: 3.20,
+        labelColor: 'rgba(232,176,122,0.92)',
+        style: 'copper'
+      }
+    };
+
+    let mode = 'vision';
+    let heatingOn = true;
+    let paused = false;
+    let materialA = 'wood';
+    let materialB = 'iron';
+
+    const heatTempInput = document.getElementById('heatTemp');
+    const ambientTempInput = document.getElementById('ambientTemp');
+    const simSpeedInput = document.getElementById('simSpeed');
+    const lossRateInput = document.getElementById('lossRate');
+    const materialASelect = document.getElementById('materialA');
+    const materialBSelect = document.getElementById('materialB');
+
+    const heatTempValue = document.getElementById('heatTempValue');
+    const ambientTempValue = document.getElementById('ambientTempValue');
+    const simSpeedValue = document.getElementById('simSpeedValue');
+    const lossRateValue = document.getElementById('lossRateValue');
+
+    const visionBtn = document.getElementById('visionBtn');
+    const thermalBtn = document.getElementById('thermalBtn');
+    const toggleHeatBtn = document.getElementById('toggleHeatBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const cardTitleA = document.getElementById('cardTitleA');
+    const cardTitleB = document.getElementById('cardTitleB');
+    const alphaAEl = document.getElementById('alphaA');
+    const alphaBEl = document.getElementById('alphaB');
+    const leftAEl = document.getElementById('leftA');
+    const midAEl = document.getElementById('midA');
+    const rightAEl = document.getElementById('rightA');
+    const leftBEl = document.getElementById('leftB');
+    const midBEl = document.getElementById('midB');
+    const rightBEl = document.getElementById('rightB');
+
+    let fieldA = new Array(N).fill(20);
+    let fieldB = new Array(N).fill(20);
+    let lastTime = performance.now();
+
+    function getHeatTemp() { return Number(heatTempInput.value); }
+    function getAmbientTemp() { return Number(ambientTempInput.value); }
+    function getSpeed() { return Number(simSpeedInput.value); }
+    function getLossRate() { return Number(lossRateInput.value); }
+
+    function resetFields() {
+      const ambient = getAmbientTemp();
+      fieldA = new Array(N).fill(ambient);
+      fieldB = new Array(N).fill(ambient);
+      if (heatingOn) {
+        fieldA[0] = getHeatTemp();
+        fieldB[0] = getHeatTemp();
+      }
+    }
+
+    function updateLabels() {
+      heatTempValue.textContent = getHeatTemp();
+      ambientTempValue.textContent = getAmbientTemp();
+      simSpeedValue.textContent = getSpeed().toFixed(1);
+      lossRateValue.textContent = getLossRate().toFixed(3);
+
+      cardTitleA.textContent = `${materials[materialA].name}판`;
+      cardTitleB.textContent = `${materials[materialB].name}판`;
+      alphaAEl.textContent = materials[materialA].alpha.toFixed(2);
+      alphaBEl.textContent = materials[materialB].alpha.toFixed(2);
+    }
+
+    function temperatureToColor(T, Tmin, Tmax) {
+      let x = (T - Tmin) / (Tmax - Tmin || 1);
+      x = Math.max(0, Math.min(1, x));
+
+      const stops = [
+        { p: 0.00, c: [148, 0, 211] },
+        { p: 0.20, c: [0, 0, 255] },
+        { p: 0.42, c: [0, 255, 0] },
+        { p: 0.68, c: [255, 255, 0] },
+        { p: 0.88, c: [255, 0, 0] },
+        { p: 1.00, c: [255, 255, 255] }
+      ];
+
+      let a = stops[0];
+      let b = stops[stops.length - 1];
+      for (let i = 0; i < stops.length - 1; i++) {
+        if (x >= stops[i].p && x <= stops[i + 1].p) {
+          a = stops[i];
+          b = stops[i + 1];
+          break;
+        }
+      }
+
+      const t = (x - a.p) / (b.p - a.p || 1);
+      const r = Math.round(a.c[0] + (b.c[0] - a.c[0]) * t);
+      const g = Math.round(a.c[1] + (b.c[1] - a.c[1]) * t);
+      const bl = Math.round(a.c[2] + (b.c[2] - a.c[2]) * t);
+      return `rgb(${r}, ${g}, ${bl})`;
+    }
+
+    function stepField(field, alpha, dt) {
+      const next = field.slice();
+      const ambient = getAmbientTemp();
+      const loss = getLossRate();
+
+      for (let i = 1; i < N - 1; i++) {
+        const lap = (field[i + 1] - 2 * field[i] + field[i - 1]) / (dx * dx);
+        next[i] = field[i] + alpha * dt * lap - loss * dt * (field[i] - ambient);
+      }
+
+      next[N - 1] = next[N - 2] - 0.01 * (next[N - 2] - ambient);
+
+      if (heatingOn) {
+        next[0] = getHeatTemp();
+      } else {
+        next[0] = field[0] - loss * dt * (field[0] - ambient) + alpha * dt * ((field[1] - field[0]) / (dx * dx));
+      }
+
+      return next;
+    }
+
+    function updatePhysics(dtReal) {
+      const speed = getSpeed();
+      const dt = baseDt * speed * Math.min(2.5, dtReal / 16.67);
+
+      for (let k = 0; k < 3; k++) {
+        fieldA = stepField(fieldA, materials[materialA].alpha, dt / 3);
+        fieldB = stepField(fieldB, materials[materialB].alpha, dt / 3);
+      }
+    }
+
+    function drawBackground() {
+      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      g.addColorStop(0, '#10141b');
+      g.addColorStop(1, '#090b10');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawTitleText() {
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.font = '700 28px Segoe UI';
+      ctx.fillText(mode === 'vision' ? '우리 눈으로 보는 모습' : '열화상카메라로 보는 모습', 36, 46);
+
+      ctx.fillStyle = 'rgba(210,220,235,0.82)';
+      ctx.font = '500 16px Segoe UI';
+      ctx.fillText('왼쪽 끝을 동시에 가열하여 재료별 열전도를 비교', 36, 74);
+    }
+
+    function drawHeater(x, y, h) {
+      const flameY = y + h / 2;
+      ctx.save();
+      ctx.translate(x, flameY);
+
+      ctx.fillStyle = '#444b57';
+      ctx.fillRect(-20, 28, 40, 18);
+      ctx.fillStyle = '#20252f';
+      ctx.fillRect(-30, 40, 60, 10);
+
+      if (heatingOn) {
+        const grd = ctx.createRadialGradient(0, 0, 6, 0, 0, 34);
+        grd.addColorStop(0, 'rgba(255,255,255,0.96)');
+        grd.addColorStop(0.4, 'rgba(255,220,80,0.95)');
+        grd.addColorStop(0.75, 'rgba(255,100,0,0.78)');
+        grd.addColorStop(1, 'rgba(255,0,0,0)');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(0, 0, 34, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,180,80,0.85)';
+        ctx.beginPath();
+        ctx.moveTo(-10, 18);
+        ctx.quadraticCurveTo(-2, -28, 0, -34);
+        ctx.quadraticCurveTo(2, -28, 10, 18);
+        ctx.quadraticCurveTo(0, 8, -10, 18);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,250,220,0.92)';
+        ctx.beginPath();
+        ctx.moveTo(-5, 12);
+        ctx.quadraticCurveTo(-1, -10, 0, -15);
+        ctx.quadraticCurveTo(1, -10, 5, 12);
+        ctx.quadraticCurveTo(0, 4, -5, 12);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawBoardLabel(title, x, y, materialColor, detailText) {
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.font = '700 22px Segoe UI';
+      ctx.fillText(title, x, y - 20);
+      ctx.fillStyle = materialColor;
+      ctx.font = '600 14px Segoe UI';
+      ctx.fillText(detailText, x, y + 2);
+    }
+
+    function roundedRectPath(x, y, w, h, r) {
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function roundedRectStroke(x, y, w, h, r) {
+      ctx.beginPath();
+      roundedRectPath(x, y, w, h, r);
+      ctx.stroke();
+    }
+
+    function drawWoodTexture(x, y, w, h) {
+      const g = ctx.createLinearGradient(x, y, x, y + h);
+      g.addColorStop(0, '#bc8957');
+      g.addColorStop(1, '#8d6036');
+      ctx.fillStyle = g;
+      ctx.fillRect(x, y, w, h);
+
+      ctx.strokeStyle = 'rgba(88,55,22,0.35)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 8; i++) {
+        const yy = y + 12 + i * (h - 24) / 7;
+        ctx.beginPath();
+        ctx.moveTo(x + 8, yy);
+        for (let xx = x + 8; xx < x + w - 8; xx += 20) {
+          ctx.quadraticCurveTo(xx + 10, yy + Math.sin((xx + i * 10) * 0.05) * 3, xx + 20, yy);
+        }
+        ctx.stroke();
+      }
+    }
+
+    function drawMetalTexture(x, y, w, h, top, mid, bottom, lineAlpha) {
+      const g = ctx.createLinearGradient(x, y, x, y + h);
+      g.addColorStop(0, top);
+      g.addColorStop(0.5, mid);
+      g.addColorStop(1, bottom);
+      ctx.fillStyle = g;
+      ctx.fillRect(x, y, w, h);
+
+      ctx.strokeStyle = lineAlpha;
+      ctx.lineWidth = 2;
+      for (let i = -1; i < 6; i++) {
+        const sx = x + i * 70;
+        ctx.beginPath();
+        ctx.moveTo(sx, y + h);
+        ctx.lineTo(sx + 50, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawVisionBoard(x, y, w, h, materialKey) {
+      const radius = 20;
+      ctx.save();
+      ctx.beginPath();
+      roundedRectPath(x, y, w, h, radius);
+      ctx.clip();
+
+      if (materialKey === 'wood') {
+        drawWoodTexture(x, y, w, h);
+      } else if (materialKey === 'copper') {
+        drawMetalTexture(x, y, w, h, '#d79a65', '#b86d3f', '#8c4d2f', 'rgba(255,230,210,0.18)');
+      } else if (materialKey === 'aluminum') {
+        drawMetalTexture(x, y, w, h, '#dfe5ec', '#b8c1cb', '#8995a3', 'rgba(255,255,255,0.24)');
+      } else if (materialKey === 'stainless') {
+        drawMetalTexture(x, y, w, h, '#cdd3da', '#98a1ab', '#6f7984', 'rgba(255,255,255,0.16)');
+      } else {
+        drawMetalTexture(x, y, w, h, '#dce6ef', '#9eabb8', '#73808b', 'rgba(255,255,255,0.22)');
+      }
+
+      if (heatingOn) {
+        const hotWidth = Math.max(18, w * 0.07);
+        const glow = ctx.createLinearGradient(x, 0, x + hotWidth * 2.2, 0);
+        glow.addColorStop(0, 'rgba(255,255,255,0.95)');
+        glow.addColorStop(0.45, 'rgba(255,90,0,0.92)');
+        glow.addColorStop(1, 'rgba(255,0,0,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(x, y, hotWidth * 2.2, h);
+      }
+
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 2;
+      roundedRectStroke(x, y, w, h, radius);
+    }
+
+    function drawThermalBoard(x, y, w, h, field) {
+      const radius = 20;
+      ctx.save();
+      ctx.beginPath();
+      roundedRectPath(x, y, w, h, radius);
+      ctx.clip();
+
+      const Tmin = getAmbientTemp();
+      const Tmax = getHeatTemp();
+      const cellW = w / N;
+      for (let i = 0; i < N; i++) {
+        ctx.fillStyle = temperatureToColor(field[i], Tmin, Tmax);
+        ctx.fillRect(x + i * cellW, y, cellW + 1, h);
+      }
+
+      for (let j = 0; j < 9; j++) {
+        const yy = y + (j / 8) * h;
+        ctx.fillStyle = 'rgba(255,255,255,0.045)';
+        ctx.fillRect(x, yy, w, 1.2);
+      }
+
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+      ctx.lineWidth = 2;
+      roundedRectStroke(x, y, w, h, radius);
+    }
+
+    function drawTemperatureMarkers(x, y, w, h) {
+      const marks = [0, Math.floor(N / 2), N - 1];
+      const labels = ['L', 'C', 'R'];
+      ctx.font = '700 13px Segoe UI';
+      ctx.textAlign = 'center';
+      marks.forEach((idx, i) => {
+        const px = x + (idx / (N - 1)) * w;
+        const py = y + h + 26;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.beginPath();
+        ctx.arc(px, y + h / 2, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(220,230,245,0.9)';
+        ctx.fillText(labels[i], px, py);
+      });
+      ctx.textAlign = 'start';
+    }
+
+    function updateInfo() {
+      const mid = Math.floor(N / 2);
+      leftAEl.textContent = `${fieldA[0].toFixed(1)} °C`;
+      midAEl.textContent = `${fieldA[mid].toFixed(1)} °C`;
+      rightAEl.textContent = `${fieldA[N - 1].toFixed(1)} °C`;
+      leftBEl.textContent = `${fieldB[0].toFixed(1)} °C`;
+      midBEl.textContent = `${fieldB[mid].toFixed(1)} °C`;
+      rightBEl.textContent = `${fieldB[N - 1].toFixed(1)} °C`;
+    }
+
+    function drawScene() {
+      drawBackground();
+      drawTitleText();
+
+      const boardX = 220;
+      const boardW = 820;
+      const boardH = 110;
+      const boardAY = 155;
+      const boardBY = 355;
+
+      drawHeater(138, boardAY, boardH);
+      drawHeater(138, boardBY, boardH);
+
+      if (mode === 'vision') {
+        drawBoardLabel(`${materials[materialA].name}판`, boardX, boardAY, materials[materialA].labelColor, '겉보기 재질과 함께 열전도 비교');
+        drawBoardLabel(`${materials[materialB].name}판`, boardX, boardBY, materials[materialB].labelColor, '같은 조건에서 재료별 열 확산 비교');
+        drawVisionBoard(boardX, boardAY, boardW, boardH, materialA);
+        drawVisionBoard(boardX, boardBY, boardW, boardH, materialB);
+      } else {
+        drawBoardLabel(`${materials[materialA].name}판`, boardX, boardAY, materials[materialA].labelColor, '열화상으로 온도 분포 비교');
+        drawBoardLabel(`${materials[materialB].name}판`, boardX, boardBY, materials[materialB].labelColor, '열화상으로 온도 분포 비교');
+        drawThermalBoard(boardX, boardAY, boardW, boardH, fieldA);
+        drawThermalBoard(boardX, boardBY, boardW, boardH, fieldB);
+        drawTemperatureMarkers(boardX, boardAY, boardW, boardH);
+        drawTemperatureMarkers(boardX, boardBY, boardW, boardH);
+      }
+
+      ctx.fillStyle = 'rgba(220,230,240,0.75)';
+      ctx.font = '600 15px Segoe UI';
+      ctx.fillText(`가열 상태: ${heatingOn ? 'ON' : 'OFF'}`, 36, 580);
+      ctx.fillText(`시각화 모드: ${mode === 'vision' ? '우리 눈' : '열화상카메라'}`, 210, 580);
+    }
+
+    function syncButtons() {
+      visionBtn.classList.toggle('active', mode === 'vision');
+      thermalBtn.classList.toggle('active', mode === 'thermal');
+      toggleHeatBtn.classList.toggle('active', heatingOn);
+      toggleHeatBtn.textContent = heatingOn ? '가열 중' : '가열 꺼짐';
+      pauseBtn.textContent = paused ? '재생' : '일시정지';
+    }
+
+    function animate(now) {
+      const dtReal = now - lastTime;
+      lastTime = now;
+
+      if (!paused) updatePhysics(dtReal);
+      updateInfo();
+      drawScene();
+      requestAnimationFrame(animate);
+    }
+
+    heatTempInput.addEventListener('input', () => {
+      updateLabels();
+      if (heatingOn) {
+        fieldA[0] = getHeatTemp();
+        fieldB[0] = getHeatTemp();
+      }
+    });
+
+    ambientTempInput.addEventListener('input', updateLabels);
+    simSpeedInput.addEventListener('input', updateLabels);
+    lossRateInput.addEventListener('input', updateLabels);
+
+    materialASelect.addEventListener('change', () => {
+      materialA = materialASelect.value;
+      updateLabels();
+      resetFields();
+    });
+
+    materialBSelect.addEventListener('change', () => {
+      materialB = materialBSelect.value;
+      updateLabels();
+      resetFields();
+    });
+
+    visionBtn.addEventListener('click', () => {
+      mode = 'vision';
+      syncButtons();
+    });
+
+    thermalBtn.addEventListener('click', () => {
+      mode = 'thermal';
+      syncButtons();
+    });
+
+    toggleHeatBtn.addEventListener('click', () => {
+      heatingOn = !heatingOn;
+      syncButtons();
+      if (heatingOn) {
+        fieldA[0] = getHeatTemp();
+        fieldB[0] = getHeatTemp();
+      }
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      paused = !paused;
+      syncButtons();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      resetFields();
+    });
+
+    updateLabels();
+    resetFields();
+    syncButtons();
+
+    requestAnimationFrame((t) => {
+      lastTime = t;
+      animate(t);
+    });
+  </script>
+</body>
+</html>
