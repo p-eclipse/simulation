@@ -1,0 +1,15 @@
+{
+  "title": "Thermodynamics",
+  "folders": [
+    {
+      "name": "particletemp",
+      "path": "./particletemp/",
+      "description": "입자 운동과 온도"
+    },
+    {
+      "name": "Heat Conduction",
+      "path": "./conductionCompare/",
+      "description": "열전도 비교실험"
+    }
+  ]
+}
