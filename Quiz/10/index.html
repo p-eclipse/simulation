@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>문장을 맞춰라!</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+      background: #f4f7fb;
+      color: #222;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .quiz-wrap {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .quiz-card {
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      padding: 24px;
+    }
+
+    .question {
+      font-size: 1.3rem;
+      font-weight: 700;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .choices {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .choice-btn {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #d9e2f0;
+      border-radius: 14px;
+      background: #fff;
+      font-size: 1rem;
+      text-align: left;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .choice-btn:hover {
+      border-color: #7aa7ff;
+      background: #f7fbff;
+      transform: translateY(-1px);
+    }
+
+    .choice-btn.selected {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      font-weight: 700;
+    }
+
+    .check-btn {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 14px;
+      background: #2563eb;
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .check-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .message {
+      margin-top: 16px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      min-height: 1.5em;
+    }
+
+    .message.wrong {
+      color: #dc2626;
+    }
+
+    .message.correct {
+      color: #2563eb;
+    }
+
+    .explanation-box {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 14px;
+      background: #eef6ff;
+      border: 1px solid #bfdbfe;
+      display: none;
+    }
+
+    .explanation-title {
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #1e40af;
+    }
+
+    .explanation-text {
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+
+    .letter-box {
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: 12px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    @media (max-width: 480px) {
+      .quiz-card {
+        padding: 18px;
+        border-radius: 16px;
+      }
+
+      .question {
+        font-size: 1.1rem;
+      }
+
+      .choice-btn,
+      .check-btn {
+        font-size: 0.96rem;
+        padding: 13px 14px;
+      }
+
+      .letter-box {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-wrap">
+    <div class="quiz-card">
+      <div class="question" id="question">
+        Q. 여러분들의 최애 과목은?
+      </div>
+
+      <div class="choices">
+        <button class="choice-btn" data-index="1">1. 과학</button>
+        <button class="choice-btn" data-index="2">2. 과학..!</button>
+        <button class="choice-btn" data-index="3">3. 과학?</button>
+        <button class="choice-btn" data-index="4">4. 과학;;</button>
+      </div>
+
+      <button class="check-btn" id="checkBtn">정답확인</button>
+
+      <div class="message" id="message"></div>
+
+      <div class="explanation-box" id="explanationBox">
+        <div class="explanation-title">해설</div>
+        <div class="explanation-text">
+          선생님도 과학 참 좋아하는데요, 과학을 좋아한다니 참 다행입니다. 글자 하나 드릴게요
+        </div>
+        <div>
+          획득한 글자:
+          <span class="letter-box" id="revealedLetter">잘</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const correctAnswer = 2; // 정답 번호
+    const revealedLetter = "잘"; // 맞췄을 때 보여줄 글자
+
+    const choiceButtons = document.querySelectorAll(".choice-btn");
+    const checkBtn = document.getElementById("checkBtn");
+    const message = document.getElementById("message");
+    const explanationBox = document.getElementById("explanationBox");
+    const revealedLetterEl = document.getElementById("revealedLetter");
+
+    let selectedAnswer = null;
+    let solved = false;
+
+    revealedLetterEl.textContent = revealedLetter;
+
+    choiceButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (solved) return;
+
+        choiceButtons.forEach((btn) => btn.classList.remove("selected"));
+        button.classList.add("selected");
+        selectedAnswer = Number(button.dataset.index);
+      });
+    });
+
+    checkBtn.addEventListener("click", () => {
+      if (solved) return;
+
+      if (selectedAnswer === null) {
+        message.textContent = "선지를 먼저 선택하세요.";
+        message.className = "message wrong";
+        explanationBox.style.display = "none";
+        return;
+      }
+
+      if (selectedAnswer != null ) {
+        message.textContent = "정답입니다!";
+        message.className = "message correct";
+        explanationBox.style.display = "block";
+        solved = true;
+
+        choiceButtons.forEach((btn) => {
+          btn.disabled = true;
+          btn.style.cursor = "default";
+        });
+
+        checkBtn.textContent = "정답 확인 완료";
+        checkBtn.disabled = true;
+        checkBtn.style.opacity = "0.7";
+        checkBtn.style.cursor = "default";
+      } else {
+        message.textContent = "오답입니다!";
+        message.className = "message wrong";
+        explanationBox.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
