@@ -1,132 +1,400 @@
-export default function SimulationSiteMainPage() {
-  const topics = [
-    {
-      name: "Mechanics",
-      description: "운동, 힘, 에너지, 진동 관련 시뮬레이션",
-      count: 8,
-      color: "from-amber-200 to-yellow-100",
-    },
-    {
-      name: "Electromagnetism",
-      description: "전기장, 자기장, 회로, 전자기 유도 시뮬레이션",
-      count: 6,
-      color: "from-sky-200 to-cyan-100",
-    },
-    {
-      name: "Optics",
-      description: "빛, 렌즈, 프리즘, 간섭, 회절 시뮬레이션",
-      count: 5,
-      color: "from-violet-200 to-fuchsia-100",
-    },
-    {
-      name: "Thermodynamics",
-      description: "열전달, 상태변화, 기체, 에너지 흐름 시뮬레이션",
-      count: 4,
-      color: "from-rose-200 to-orange-100",
-    },
-    {
-      name: "Quantum",
-      description: "파동함수, 퍼텐셜, 시간 진화 관련 시뮬레이션",
-      count: 3,
-      color: "from-emerald-200 to-lime-100",
-    },
-    {
-      name: "Math Tools",
-      description: "벡터장, 그래디언트, 좌표변환 등 수학 도구",
-      count: 7,
-      color: "from-slate-200 to-zinc-100",
-    },
-  ];
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulation Archive</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-slate-200 text-slate-800">
-      <div className="mx-auto max-w-7xl px-6 py-10 md:px-10 lg:px-12">
-        <header className="mb-10 rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-sm backdrop-blur">
-          <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-            <span className="rounded-full bg-slate-100 px-3 py-1">main</span>
-            <span>/</span>
-            <span>topic</span>
-            <span>/</span>
-            <span>simulation</span>
-          </div>
+    :root {
+      --bg1: #f3f4f6;
+      --bg2: #ffffff;
+      --bg3: #e5e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --card: #ffffff;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --shadow-hover: 0 18px 40px rgba(15, 23, 42, 0.14);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
 
-          <div className="grid gap-8 lg:grid-cols-[1.4fr_0.9fr]">
-            <div>
-              <p className="mb-3 text-sm font-medium uppercase tracking-[0.24em] text-slate-500">
-                Simulation Archive
-              </p>
-              <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-                다양한 시뮬레이션을
-                <br />
-                폴더처럼 탐색하는 공간
-              </h1>
-              <p className="max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
-                이 사이트는 여러 주제의 시뮬레이션을 한곳에 모아둔 아카이브입니다.
-                메인에서는 주제 폴더를 보고, topic으로 들어가면 그 안의 simulation 폴더들이
-                다시 나타나는 구조로 설계했습니다. Finder처럼 직관적으로 탐색할 수 있도록
-                단순하고 깔끔한 인터페이스를 목표로 했습니다.
-              </p>
-            </div>
+    body {
+      margin: 0;
+      font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+      min-height: 100vh;
+    }
 
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-              <h2 className="mb-4 text-lg font-semibold">구조</h2>
-              <div className="space-y-3 text-sm text-slate-600">
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <div className="font-medium text-slate-800">main</div>
-                  <div>전체 주제(topic) 폴더를 보여주는 시작 화면</div>
-                </div>
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <div className="font-medium text-slate-800">topic</div>
-                  <div>해당 주제 안의 시뮬레이션 폴더 목록</div>
-                </div>
-                <div className="rounded-2xl bg-white p-4 shadow-sm">
-                  <div className="font-medium text-slate-800">simulation</div>
-                  <div>실제 시뮬레이션 페이지</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
+    .container {
+      width: min(1200px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
 
-        <section>
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-semibold">주제 폴더</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                폴더를 클릭하면 해당 topic 페이지로 이동하는 형태를 가정했습니다.
-              </p>
-            </div>
-          </div>
+    .hero {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      padding: 32px;
+      margin-bottom: 28px;
+    }
 
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {topics.map((topic) => (
-              <a
-                key={topic.name}
-                href={`./${topic.name.toLowerCase().replace(/\s+/g, "-")}/`}
-                className="group rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg"
-              >
-                <div className={`mb-4 rounded-2xl bg-gradient-to-br ${topic.color} p-5`}>
-                  <div className="mb-3 text-4xl">📁</div>
-                  <div className="text-xl font-semibold text-slate-800">{topic.name}</div>
-                </div>
-                <p className="mb-4 text-sm leading-6 text-slate-600">{topic.description}</p>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-                    {topic.count} simulations
-                  </span>
-                  <span className="font-medium text-slate-700 group-hover:translate-x-1 transition">
-                    열기 →
-                  </span>
-                </div>
-              </a>
-            ))}
-          </div>
-        </section>
+    .breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
 
-        <footer className="mt-12 border-t border-slate-200 pt-6 text-sm text-slate-500">
-          <p>Finder 스타일의 구조를 참고한 메인 페이지 시안입니다.</p>
-        </footer>
+    .breadcrumb .tag {
+      background: #f3f4f6;
+      border-radius: 999px;
+      padding: 8px 14px;
+      color: #4b5563;
+      font-weight: 600;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 0.9fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: clamp(2rem, 4vw, 3.6rem);
+      line-height: 1.12;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.8;
+      font-size: 1rem;
+    }
+
+    .structure-box {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: var(--radius-lg);
+      padding: 22px;
+    }
+
+    .structure-box h2 {
+      margin: 0 0 16px;
+      font-size: 1.1rem;
+    }
+
+    .structure-item {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+      margin-bottom: 12px;
+      border: 1px solid #eef2f7;
+    }
+
+    .structure-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .structure-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    .section-head p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .folder-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .folder-card {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      background: var(--card);
+      border: 1px solid #e5e7eb;
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+
+    .folder-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-hover);
+      border-color: #cbd5e1;
+    }
+
+    .folder-top {
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 14px;
+      min-height: 132px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .folder-icon {
+      font-size: 2.4rem;
+      line-height: 1;
+    }
+
+    .folder-name {
+      font-size: 1.28rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .folder-desc {
+      margin: 0 0 16px;
+      color: #4b5563;
+      line-height: 1.7;
+      font-size: 0.95rem;
+      min-height: 52px;
+    }
+
+    .folder-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.92rem;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      background: #f3f4f6;
+      border-radius: 999px;
+      color: #4b5563;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .open-text {
+      font-weight: 700;
+      color: #374151;
+    }
+
+    .footer {
+      margin-top: 34px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .amber { background: linear-gradient(135deg, #fde68a, #fef3c7); }
+    .sky { background: linear-gradient(135deg, #bae6fd, #cffafe); }
+    .violet { background: linear-gradient(135deg, #ddd6fe, #fae8ff); }
+    .rose { background: linear-gradient(135deg, #fecdd3, #ffedd5); }
+    .emerald { background: linear-gradient(135deg, #bbf7d0, #ecfccb); }
+    .slate { background: linear-gradient(135deg, #e2e8f0, #f4f4f5); }
+
+    @media (max-width: 980px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .folder-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        width: min(100% - 20px, 1200px);
+        padding-top: 20px;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .folder-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head {
+        flex-direction: column;
+        align-items: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <div class="breadcrumb">
+        <span class="tag">main</span>
+        <span>/</span>
+        <span>topic</span>
+        <span>/</span>
+        <span>simulation</span>
       </div>
-    </div>
-  );
-}
+
+      <div class="hero-grid">
+        <div>
+          <div class="eyebrow">Simulation Archive</div>
+          <h1>다양한 시뮬레이션을<br />폴더처럼 탐색하는 공간</h1>
+          <p>
+            이 사이트는 여러 주제의 시뮬레이션을 한곳에 모아둔 아카이브입니다.
+            메인에서는 topic 폴더들을 보고, topic 안으로 들어가면 그 안의 simulation 목록이 다시 나타나는 구조입니다.
+            Finder처럼 직관적으로 탐색할 수 있도록 단순하고 깔끔한 인터페이스로 구성했습니다.
+          </p>
+        </div>
+
+        <aside class="structure-box">
+          <h2>구조</h2>
+          <div class="structure-item">
+            <strong>main</strong>
+            전체 topic 폴더를 보여주는 시작 화면
+          </div>
+          <div class="structure-item">
+            <strong>topic</strong>
+            해당 주제 안의 simulation 폴더 목록
+          </div>
+          <div class="structure-item">
+            <strong>simulation</strong>
+            실제 시뮬레이션 페이지
+          </div>
+        </aside>
+      </div>
+    </header>
+
+    <main>
+      <div class="section-head">
+        <div>
+          <h2>주제 폴더</h2>
+          <p>폴더를 클릭하면 해당 topic 페이지로 이동하도록 구성할 수 있습니다.</p>
+        </div>
+      </div>
+
+      <section class="folder-grid" id="folderGrid"></section>
+    </main>
+
+    <footer class="footer">
+      Finder 스타일을 참고한 메인 페이지입니다.
+    </footer>
+  </div>
+
+  <script>
+    const topics = [
+      {
+        name: "Mechanics",
+        description: "운동, 힘, 에너지, 진동 관련 시뮬레이션",
+        count: 8,
+        colorClass: "amber",
+        icon: "📁",
+        path: "./mechanics/"
+      },
+      {
+        name: "Electromagnetism",
+        description: "전기장, 자기장, 회로, 전자기 유도 시뮬레이션",
+        count: 6,
+        colorClass: "sky",
+        icon: "📁",
+        path: "./electromagnetism/"
+      },
+      {
+        name: "Optics",
+        description: "빛, 렌즈, 프리즘, 간섭, 회절 시뮬레이션",
+        count: 5,
+        colorClass: "violet",
+        icon: "📁",
+        path: "./optics/"
+      },
+      {
+        name: "Thermodynamics",
+        description: "열전달, 상태변화, 기체, 에너지 흐름 시뮬레이션",
+        count: 4,
+        colorClass: "rose",
+        icon: "📁",
+        path: "./thermodynamics/"
+      },
+      {
+        name: "Quantum",
+        description: "파동함수, 퍼텐셜, 시간 진화 관련 시뮬레이션",
+        count: 3,
+        colorClass: "emerald",
+        icon: "📁",
+        path: "./quantum/"
+      },
+      {
+        name: "Math Tools",
+        description: "벡터장, 그래디언트, 좌표변환 등 수학 도구",
+        count: 7,
+        colorClass: "slate",
+        icon: "📁",
+        path: "./math-tools/"
+      }
+    ];
+
+    const folderGrid = document.getElementById("folderGrid");
+
+    topics.forEach((topic) => {
+      const card = document.createElement("a");
+      card.className = "folder-card";
+      card.href = topic.path;
+
+      card.innerHTML = `
+        <div class="folder-top ${topic.colorClass}">
+          <div class="folder-icon">${topic.icon}</div>
+          <div class="folder-name">${topic.name}</div>
+        </div>
+        <p class="folder-desc">${topic.description}</p>
+        <div class="folder-meta">
+          <span class="pill">${topic.count} simulations</span>
+          <span class="open-text">열기 →</span>
+        </div>
+      `;
+
+      folderGrid.appendChild(card);
+    });
+  </script>
+</body>
+</html>
