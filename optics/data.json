@@ -1,0 +1,10 @@
+{
+  "title": "Optics",
+  "folders": [
+    {
+      "name": "Double Slit",
+      "path": "./doubleslit/",
+      "description": "이중슬릿 시뮬레이션"
+    }
+  ]
+}
