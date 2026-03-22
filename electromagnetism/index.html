@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Topic</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Pretendard","Noto Sans KR",system-ui,sans-serif;background:#f3f4f6;color:#111827}
+    .container{width:min(1100px,calc(100% - 32px));margin:0 auto;padding:32px 0}
+    h1{margin:0 0 16px;font-size:2.4rem}
+    .breadcrumb{margin-bottom:16px;color:#6b7280}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .card{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px;transition:.2s}
+    .card:hover{transform:translateY(-4px);box-shadow:0 10px 20px rgba(0,0,0,.08)}
+    .icon{font-size:2rem;margin-bottom:10px}
+    .name{font-weight:700;margin-bottom:6px}
+    @media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:500px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="../" style="text-decoration:none; color:inherit; font-weight:600;">main</a>
+      /
+      <span id="topicName">topic</span>
+    </div>
+    <h1 id="title">Topic</h1>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script>
+    fetch("./data.json")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("title").innerText = data.title;
+        document.getElementById("topicName").innerText = data.title;
+
+        const grid = document.getElementById("grid");
+
+        data.folders.forEach(f => {
+          const card = document.createElement("a");
+          card.className = "card";
+          card.href = f.path;
+
+          card.innerHTML = `
+            <div class="icon">📁</div>
+            <div class="name">${f.name}</div>
+            <div>${f.description || ""}</div>
+          `;
+
+          grid.appendChild(card);
+        });
+      })
+      .catch(err => {
+        document.getElementById("grid").innerHTML = "data.json 로딩 실패";
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
